@@ -11,24 +11,35 @@ import { cleanEnv, str, port } from 'envalid';
 
 // Load env vars
 dotenv.config();
-
-// Validate required environment variables early
+// Validate required environment variables early (skip strict validation in test)
 let env;
-try {
-  env = cleanEnv(process.env, {
-    NODE_ENV: str({ choices: ['development', 'production', 'test'] }),
-    PORT: port({ default: 5000 }),
-    MONGO_URI: str()
-  });
-} catch (err) {
-  console.error('Environment validation error:', err.message);
-  process.exit(1);
-}
+if (process.env.NODE_ENV === 'test') {
+  // Provide sane defaults for test runs so CI/local smoke tests can run without a DB
+  process.env.NODE_ENV = process.env.NODE_ENV || 'test';
+  process.env.PORT = process.env.PORT || '5001';
+  process.env.MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/test';
+  env = {
+    NODE_ENV: process.env.NODE_ENV,
+    PORT: Number(process.env.PORT),
+    MONGO_URI: process.env.MONGO_URI
+  };
+} else {
+  try {
+    env = cleanEnv(process.env, {
+      NODE_ENV: str({ choices: ['development', 'production', 'test'] }),
+      PORT: port({ default: 5000 }),
+      MONGO_URI: str()
+    });
+  } catch (err) {
+    console.error('Environment validation error:', err.message);
+    process.exit(1);
+  }
 
-// Ensure validated values are available on process.env for older modules
-process.env.NODE_ENV = env.NODE_ENV;
-process.env.PORT = String(env.PORT);
-process.env.MONGO_URI = env.MONGO_URI;
+  // Ensure validated values are available on process.env for older modules
+  process.env.NODE_ENV = env.NODE_ENV;
+  process.env.PORT = String(env.PORT);
+  process.env.MONGO_URI = env.MONGO_URI;
+}
 
 // Connect to database
 connectDB();
@@ -116,3 +127,6 @@ process.on('unhandledRejection', (reason) => {
   console.error('Unhandled Rejection:', reason);
   shutdown('unhandledRejection');
 });
+
+// Export app and server for testing tools that import the module
+export { app, server };

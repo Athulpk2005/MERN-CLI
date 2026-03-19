@@ -23,7 +23,7 @@ jobs:
         run: npm ci
 
       - name: Install server dependencies
-        run: npm ci --prefix templates/server
+        run: npm install --prefix templates/server
 
       - name: Install client dependencies
         run: npm ci --prefix templates/client
@@ -34,6 +34,9 @@ jobs:
       - name: Client build
         run: npm --prefix templates/client run build
 
+      - name: Run server smoke test
+        run: npm --prefix templates/server run test:smoke
+
       - name: Run npm audit (root)
         run: npm audit --audit-level=moderate || true
 
@@ -42,15 +45,7 @@ jobs:
 
       - name: Run npm audit (client)
         run: npm --prefix templates/client audit --audit-level=moderate || true
-name: CI
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
-jobs:
   build:
     runs-on: ubuntu-latest
     steps:
