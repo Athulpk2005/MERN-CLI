@@ -1,0 +1,83 @@
+name: Build and Publish to AWS ECR
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-push-ecr:
+    runs-on: ubuntu-latest
+    env:
+      SERVER_REPO: mern-app-server
+      CLIENT_REPO: mern-app-client
+      CLIENT_TS_REPO: mern-app-client-ts
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region: ${{ secrets.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Create ECR repositories if missing
+        id: create-ecr-repos
+        run: |
+          aws ecr describe-repositories --repository-names "$SERVER_REPO" || aws ecr create-repository --repository-name "$SERVER_REPO"
+          aws ecr describe-repositories --repository-names "$CLIENT_REPO" || aws ecr create-repository --repository-name "$CLIENT_REPO"
+          if [ -f templates/client-ts/Dockerfile ]; then
+            aws ecr describe-repositories --repository-names "$CLIENT_TS_REPO" || aws ecr create-repository --repository-name "$CLIENT_TS_REPO"
+            echo "client_ts_present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "client_ts_present=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build and push server image to ECR
+        uses: docker/build-push-action@v4
+        with:
+          context: templates/server
+          file: templates/server/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.SERVER_REPO }}:latest
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.SERVER_REPO }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push client image to ECR
+        uses: docker/build-push-action@v4
+        with:
+          context: templates/client
+          file: templates/client/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.CLIENT_REPO }}:latest
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.CLIENT_REPO }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push client-ts image to ECR (if present)
+        if: ${{ steps.create-ecr-repos.outputs.client_ts_present == 'true' }}
+        uses: docker/build-push-action@v4
+        with:
+          context: templates/client-ts
+          file: templates/client-ts/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.CLIENT_TS_REPO }}:latest
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.CLIENT_TS_REPO }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

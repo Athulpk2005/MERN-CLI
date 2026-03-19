@@ -1,0 +1,24 @@
+version: '3.8'
+services:
+  server:
+    build: ./templates/server
+    image: mern-app-server:latest
+    restart: unless-stopped
+    env_file: ./templates/server/.env.template
+    ports:
+      - "5000:5000"
+    networks:
+      - mern-network
+
+  client:
+    build: ./templates/client
+    image: mern-app-client:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    networks:
+      - mern-network
+
+networks:
+  mern-network:
+    driver: bridge
