@@ -9,7 +9,7 @@ import { execa } from 'execa';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export async function runCli(projectName) {
+export async function runCli(projectName, opts = {}) {
   const targetDir = path.resolve(process.cwd(), projectName);
 
   if (fs.existsSync(targetDir)) {
@@ -20,48 +20,61 @@ export async function runCli(projectName) {
   console.log(chalk.cyan(`Welcome to MERN Scaffolder CLI! Let's set up your project.`));
   console.log();
 
-  const answers = await inquirer.prompt([
-    {
-      type: 'confirm',
-      name: 'includeRedux',
-      message: 'Include Redux?',
-      default: false
-    },
-    {
-      type: 'confirm',
-      name: 'useTailwind',
-      message: 'Use Tailwind CSS?',
-      default: true
-    },
-    {
-      type: 'list',
-      name: 'language',
-      message: 'TypeScript or JavaScript?',
-      choices: ['JavaScript', 'TypeScript'],
-      default: 'JavaScript'
-    },
-    {
-      type: 'checkbox',
-      name: 'extraFrontend',
-      message: 'Select additional frontend libraries:',
-      choices: [
-        { name: 'React Query (Data Fetching)', value: 'react-query', checked: true },
-        { name: 'React Hook Form + Zod (Forms & Validation)', value: 'react-hook-form' },
-        { name: 'Framer Motion (Animations)', value: 'framer-motion' }
-      ]
-    },
-    {
-      type: 'checkbox',
-      name: 'extraBackend',
-      message: 'Select additional backend libraries:',
-      choices: [
-        { name: 'Cookie Parser (Secure cookies)', value: 'cookie-parser' },
-        { name: 'Multer (File Uploads)', value: 'multer' },
-        { name: 'Express Rate Limit (DDoS Protection)', value: 'express-rate-limit' },
-        { name: 'Zod (Schema validation)', value: 'zod' }
-      ]
-    }
-  ]);
+  // Support non-interactive usage via opts (commander options)
+  let answers;
+  if (opts && (opts.yes || opts.nonInteractive)) {
+    answers = {
+      includeRedux: false,
+      useTailwind: true,
+      language: (opts.template && opts.template.toLowerCase() === 'typescript') ? 'TypeScript' : 'JavaScript',
+      extraFrontend: [],
+      extraBackend: []
+    };
+    console.log(chalk.gray('Using defaults: Redux=false, Tailwind=true, language=' + answers.language));
+  } else {
+    answers = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'includeRedux',
+        message: 'Include Redux?',
+        default: false
+      },
+      {
+        type: 'confirm',
+        name: 'useTailwind',
+        message: 'Use Tailwind CSS?',
+        default: true
+      },
+      {
+        type: 'list',
+        name: 'language',
+        message: 'TypeScript or JavaScript?',
+        choices: ['JavaScript', 'TypeScript'],
+        default: 'JavaScript'
+      },
+      {
+        type: 'checkbox',
+        name: 'extraFrontend',
+        message: 'Select additional frontend libraries:',
+        choices: [
+          { name: 'React Query (Data Fetching)', value: 'react-query', checked: true },
+          { name: 'React Hook Form + Zod (Forms & Validation)', value: 'react-hook-form' },
+          { name: 'Framer Motion (Animations)', value: 'framer-motion' }
+        ]
+      },
+      {
+        type: 'checkbox',
+        name: 'extraBackend',
+        message: 'Select additional backend libraries:',
+        choices: [
+          { name: 'Cookie Parser (Secure cookies)', value: 'cookie-parser' },
+          { name: 'Multer (File Uploads)', value: 'multer' },
+          { name: 'Express Rate Limit (DDoS Protection)', value: 'express-rate-limit' },
+          { name: 'Zod (Schema validation)', value: 'zod' }
+        ]
+      }
+    ]);
+  }
 
   console.log();
 

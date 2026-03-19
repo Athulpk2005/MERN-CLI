@@ -28,17 +28,13 @@ if (process.env.NODE_ENV === 'test') {
     env = cleanEnv(process.env, {
       NODE_ENV: str({ choices: ['development', 'production', 'test'] }),
       PORT: port({ default: 5000 }),
-      MONGO_URI: str()
+      MONGO_URI: str(),
+      CLIENT_URL: str({ default: 'http://localhost:5173' })
     });
   } catch (err) {
     console.error('Environment validation error:', err.message);
     process.exit(1);
   }
-
-  // Ensure validated values are available on process.env for older modules
-  process.env.NODE_ENV = env.NODE_ENV;
-  process.env.PORT = String(env.PORT);
-  process.env.MONGO_URI = env.MONGO_URI;
 }
 
 // Connect to database
@@ -49,8 +45,9 @@ const app = express();
 // Body parser
 app.use(express.json());
 
-// Enable CORS
-app.use(cors());
+// Enable CORS — restrict to trusted origin only
+const allowedOrigin = env?.CLIENT_URL || process.env.CLIENT_URL || 'http://localhost:5173';
+app.use(cors({ origin: allowedOrigin }));
 
 // Static folder
 if (process.env.NODE_ENV === 'development') {
