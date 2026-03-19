@@ -58,8 +58,10 @@ export async function runCli(projectName, opts = {}) {
         message: 'Select additional frontend libraries:',
         choices: [
           { name: 'React Query (Data Fetching)', value: 'react-query', checked: true },
-          { name: 'React Hook Form + Zod (Forms & Validation)', value: 'react-hook-form' },
-          { name: 'Framer Motion (Animations)', value: 'framer-motion' }
+          { name: 'React Hook Form + Zod (Forms & Validation)', value: 'react-hook-form', checked: true },
+          { name: 'Framer Motion (Animations)', value: 'framer-motion', checked: true },
+          { name: 'Zustand (State Management)', value: 'zustand', checked: true },
+          { name: 'React Hot Toast (Notifications)', value: 'react-hot-toast', checked: true }
         ]
       },
       {
@@ -67,10 +69,12 @@ export async function runCli(projectName, opts = {}) {
         name: 'extraBackend',
         message: 'Select additional backend libraries:',
         choices: [
-          { name: 'Cookie Parser (Secure cookies)', value: 'cookie-parser' },
-          { name: 'Multer (File Uploads)', value: 'multer' },
-          { name: 'Express Rate Limit (DDoS Protection)', value: 'express-rate-limit' },
-          { name: 'Zod (Schema validation)', value: 'zod' }
+          { name: 'Cookie Parser (Secure cookies)', value: 'cookie-parser', checked: true },
+          { name: 'Multer (File Uploads)', value: 'multer', checked: true },
+          { name: 'Express Rate Limit (DDoS Protection)', value: 'express-rate-limit', checked: true },
+          { name: 'Zod (Schema validation)', value: 'zod' },
+          { name: 'Compression (Gzip responses)', value: 'compression' },
+          { name: 'Winston (Logging)', value: 'winston' }
         ]
       }
     ]);
@@ -174,7 +178,9 @@ export async function runCli(projectName, opts = {}) {
     const pkgMap = {
       'react-query': ['@tanstack/react-query'],
       'react-hook-form': ['react-hook-form', 'zod', '@hookform/resolvers'],
-      'framer-motion': ['framer-motion']
+      'framer-motion': ['framer-motion'],
+      'zustand': ['zustand'],
+      'react-hot-toast': ['react-hot-toast']
     };
     const packagesToInstall = answers.extraFrontend.flatMap(lib => pkgMap[lib]);
     
