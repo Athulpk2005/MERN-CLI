@@ -15,9 +15,19 @@
   "keywords": [
     "mern",
     "cli",
-    "scaffold"
+    "scaffold",
+    "create-mern-app",
+    "react",
+    "express",
+    "mongodb",
+    "nodejs"
   ],
-  "author": "",
+  "author": "<your-name>",
+  "files": [
+    "bin",
+    "src",
+    "templates"
+  ],
   "license": "MIT",
   "engines": {
     "node": ">=20.0.0"
